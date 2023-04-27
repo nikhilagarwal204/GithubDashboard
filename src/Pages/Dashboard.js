@@ -53,7 +53,7 @@ function Dashboard() {
           alignItems: "center",
         }}
       >
-        <Typography variant="h4">Exclusive GitHub Dashboard 🚀</Typography>
+        <Typography variant="h4">Exclusive GitHub Dashboard 🚀 &nbsp; for <a rel="noreferrer" target="_blank" href="https://github.com/facebook/react">facebook/react</a></Typography>
       </Box>
       <Divider sx={{ my: 2 }} />
       <Box sx={{ display: "flex", gap: "2rem" }}>
