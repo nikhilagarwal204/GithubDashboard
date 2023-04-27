@@ -137,7 +137,7 @@ const IssueList = () => {
                   primary={
                     <Link
                       style={{ color: "#f5f2ef", textDecoration: "none" }}
-                      to={`/pulls/${issue.number}`}
+                      to={`/issues/${issue.number}`}
                     >
                       {issue.title}
                     </Link>
