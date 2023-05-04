@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import {
   Box,
   Button,
@@ -8,40 +7,18 @@ import {
   CardContent,
   CardHeader,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
   Typography,
 } from "@mui/material";
+import DataListMap from "../components/DataListMap";
+import fetchData from "../utils";
 
 function Dashboard() {
   const [pullRequests, setPullRequests] = useState([]);
   const [issues, setIssues] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(
-        `https://api.github.com/repos/${process.env.REACT_APP_GITHUB_OWNER}/${process.env.REACT_APP_GITHUB_REPO}/pulls?per_page=5`,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`,
-          },
-        }
-      )
-      .then((response) => setPullRequests(response.data))
-      .catch((error) => console.log(error));
-
-    axios
-      .get(
-        `https://api.github.com/repos/${process.env.REACT_APP_GITHUB_OWNER}/${process.env.REACT_APP_GITHUB_REPO}/issues?per_page=5`,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`,
-          },
-        }
-      )
-      .then((response) => setIssues(response.data))
-      .catch((error) => console.log(error));
+    fetchData(`pulls?per_page=5`).then(res => setPullRequests(res));
+    fetchData(`issues?per_page=5`).then(res => setIssues(res));
   }, []);
 
   return (
@@ -67,29 +44,8 @@ function Dashboard() {
         >
           <CardHeader title="Latest Pull Requests:" />
           <CardContent>
-            <List>
-              {pullRequests.map((pullRequest) => (
-                <ListItem key={pullRequest.id}>
-                  <ListItemText
-                    primary={
-                      <Link
-                        style={{ color: "#f5f2ef", textDecoration: "none" }}
-                        to={`/pulls/${pullRequest.number}`}
-                      >
-                        {pullRequest.title}
-                      </Link>
-                    }
-                    secondary={
-                      <span
-                        style={{ color: "#6ccde1" }}
-                      >{`#${pullRequest.number} opened by ${pullRequest.user.login}`}</span>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
+            <DataListMap data={pullRequests} linkTo="pulls"/>
           </CardContent>
-          <br />
           <Box sx={{ p: 2 }}>
             <Button
               style={{ background: "#4343e5", color: "pink" }}
@@ -111,27 +67,7 @@ function Dashboard() {
         >
           <CardHeader title="Latest Issues:" />
           <CardContent>
-            <List>
-              {issues.map((issue) => (
-                <ListItem key={issue.id}>
-                  <ListItemText
-                    primary={
-                      <Link
-                        style={{ color: "#d6f1f0", textDecoration: "none" }}
-                        to={`/issues/${issue.number}`}
-                      >
-                        {issue.title}
-                      </Link>
-                    }
-                    secondary={
-                      <span
-                        style={{ color: "#6ccde1" }}
-                      >{`#${issue.number} opened by ${issue.user.login}`}</span>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
+            <DataListMap data={issues} linkTo="issues"/>
           </CardContent>
           <Box sx={{ p: 2 }}>
             <Button

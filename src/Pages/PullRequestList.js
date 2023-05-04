@@ -1,23 +1,19 @@
 import { useState, useEffect } from "react";
 import {
   Box,
-  Grid,
   Typography,
   TextField,
   MenuItem,
   Select,
   InputLabel,
-  List,
-  ListItem,
-  ListItemText,
   Button,
 } from "@mui/material";
-import Pagination from "@mui/material/Pagination";
-import axios from "axios";
-import { Link } from "react-router-dom";
+import DataListMap from "../components/DataListMap";
+import PaginationBox from "../components/PaginationBox";
+import fetchData from "../utils";
 
 const PullRequestList = () => {
-  const [pullRequests, setPullRequests] = useState([]);
+  const [pullRequests, setPullRequests] = useState(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [popularitySort, setPopularitySort] = useState("");
   const [page, setPage] = useState(1);
@@ -35,52 +31,20 @@ const PullRequestList = () => {
   const handlePopularitySortChange = (event) => {
     setPopularitySort(event.target.value);
     setPage(1);
-  };
+  }; 
 
   useEffect(() => {
-    const fetchPullRequests = async () => {
-      try {
-        const response = await axios.get(
-          `https://api.github.com/repos/facebook/react/pulls?per_page=5&page=${page}&state=all&sort=${popularitySort}&direction=desc`,
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`,
-            },
-          }
-        );
-        setPullRequests(response.data);
-        const tcount = await axios.get(
-          `https://api.github.com/repos/facebook/react/pulls?per_page=10000`,
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`,
-            },
-          }
-        );
-        setTotalCount(tcount.data.length);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchPullRequests();
+    fetchData(`pulls?per_page=5&page=${page}&state=all&sort=${popularitySort}&direction=desc`).then((res) => setPullRequests(res));
+    fetchData(`pulls?per_page=10000`).then((res) => setTotalCount(res.length));
   }, [page, popularitySort]);
 
   const fetchPullRequestsFilter = async () => {
-    try {
-      const response = await axios.get(
-        `https://api.github.com/repos/facebook/react/pulls?per_page=5&page=${page}&state=${statusFilter.toLowerCase()}&sort=${popularitySort}&direction=desc`,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`,
-          },
-        }
-      );
-      setPullRequests(response.data);
-    } catch (error) {
-      console.log(error);
-    }
+    fetchData(`pulls?per_page=5&page=${page}&state=${statusFilter.toLowerCase()}&sort=${popularitySort}&direction=desc`).then((res) => setPullRequests(res));
   };
+
+  if (!pullRequests) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div style={{ padding: "2em", color: "white", paddingTop: "2px" }}>
@@ -108,9 +72,11 @@ const PullRequestList = () => {
         <Button variant="contained" onClick={fetchPullRequestsFilter}>
           FILTER
         </Button>
-        <InputLabel style={{ color: "azure", marginLeft: "5em" }}>SORT by:</InputLabel>
+        <InputLabel style={{ color: "azure", marginLeft: "5em" }}>
+          SORT by:
+        </InputLabel>
         <Select
-          style={{ background: "white", width: "10%", height:"45px" }}
+          style={{ background: "white", width: "10%", height: "45px" }}
           value={popularitySort}
           onChange={handlePopularitySortChange}
         >
@@ -120,45 +86,19 @@ const PullRequestList = () => {
         </Select>
       </Box>
 
-      <Grid>
-        {pullRequests.map((pullRequest) => (
-          <Grid item xs={12} key={pullRequest.id}>
-            <List>
-              <ListItem key={pullRequest.id}>
-                <ListItemText
-                  primary={
-                    <Link
-                      style={{ color: "#f5f2ef", textDecoration: "none" }}
-                      to={`/pulls/${pullRequest.number}`}
-                    >
-                      {pullRequest.title}
-                    </Link>
-                  }
-                  secondary={
-                    <span
-                      style={{ color: "#6ccde1" }}
-                    >{`#${pullRequest.number} opened by ${pullRequest.user.login}`}</span>
-                  }
-                />
-              </ListItem>
-            </List>
-          </Grid>
-        ))}
-      </Grid>
+      <DataListMap data={pullRequests} linkTo="pulls" />
 
-      <Box
-        style={{
-          margin: "2em",
-          display: "flex",
-        }}
-      >
-        <Pagination
-          style={{ background: "white" }}
-          count={Math.ceil(totalCount / 5)}
+      {pullRequests.length !== 0 ? (
+        <PaginationBox
+          totalCount={totalCount}
           page={page}
-          onChange={handlePageChange}
+          handlePageChange={handlePageChange}
         />
-      </Box>
+      ) : (
+        <div style={{ color: "red" }}>
+          No Pull Requests Found with these Filters
+        </div>
+      )}
     </div>
   );
 };

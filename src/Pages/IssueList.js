@@ -1,21 +1,11 @@
 import { useState, useEffect } from "react";
-import {
-  Box,
-  Grid,
-  Typography,
-  MenuItem,
-  Select,
-  InputLabel,
-  List,
-  ListItem,
-  ListItemText,
-} from "@mui/material";
-import Pagination from "@mui/material/Pagination";
-import axios from "axios";
-import { Link } from "react-router-dom";
+import { Box, Typography, MenuItem, Select, InputLabel } from "@mui/material";
+import DataListMap from "../components/DataListMap";
+import PaginationBox from "../components/PaginationBox";
+import fetchData from "../utils";
 
 const IssueList = () => {
-  const [issues, setIssues] = useState([]);
+  const [issues, setIssues] = useState(null);
   const [labels, setLabels] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [labelFilter, setLabelFilter] = useState([]);
@@ -37,53 +27,18 @@ const IssueList = () => {
   };
 
   useEffect(() => {
-    const fetchLabels = async () => {
-      try {
-        const vlabels = await axios.get(
-          `https://api.github.com/repos/facebook/react/labels`,
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`,
-            },
-          }
-        );
-        setLabels(vlabels.data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchLabels();
+    fetchData(`labels`).then((res) => setLabels(res));
   }, []);
 
   useEffect(() => {
-    const fetchIssues = async () => {
-      try {
-        const response = await axios.get(
-          `https://api.github.com/repos/facebook/react/issues?per_page=5&page=${page}&state=${statusFilter}&labels=${labelFilter}&direction=desc`,
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`,
-            },
-          }
-        );
-        setIssues(response.data);
-        const tcount = await axios.get(
-          `https://api.github.com/repos/facebook/react/issues?per_page=10000&state=${statusFilter}&labels=${labelFilter}`,
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.REACT_APP_GITHUB_TOKEN}`,
-            },
-          }
-        );
-        setTotalCount(tcount.data.length);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchIssues();
+    fetchData(`issues?per_page=5&page=${page}&state=${statusFilter}&labels=${labelFilter}&direction=desc`).then((res) => setIssues(res));
+    fetchData(`issues?per_page=10000&state=${statusFilter}&labels=${labelFilter}`).then((res) => setTotalCount(res.length));
     // eslint-disable-next-line
   }, [page, statusFilter, labelFilter]);
+
+  if (!issues) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div style={{ padding: "2em", color: "white", paddingTop: "2px" }}>
@@ -105,7 +60,7 @@ const IssueList = () => {
             background: "white",
             width: "8%",
             marginRight: "4em",
-            height: "45px"
+            height: "45px",
           }}
           value={statusFilter}
           onChange={handleStatusFilterChange}
@@ -128,45 +83,14 @@ const IssueList = () => {
         </Select>
       </Box>
 
-      <Grid>
-        {issues.map((issue) => (
-          <Grid item xs={12} key={issue.id}>
-            <List>
-              <ListItem key={issue.id}>
-                <ListItemText
-                  primary={
-                    <Link
-                      style={{ color: "#f5f2ef", textDecoration: "none" }}
-                      to={`/issues/${issue.number}`}
-                    >
-                      {issue.title}
-                    </Link>
-                  }
-                  secondary={
-                    <span
-                      style={{ color: "#6ccde1" }}
-                    >{`#${issue.number} opened by ${issue.user.login}`}</span>
-                  }
-                />
-              </ListItem>
-            </List>
-          </Grid>
-        ))}
-      </Grid>
+      <DataListMap data={issues} linkTo="issues" />
+
       {issues.length !== 0 ? (
-        <Box
-          style={{
-            margin: "3em",
-            display: "flex",
-          }}
-        >
-          <Pagination
-            style={{ background: "white" }}
-            count={Math.ceil(totalCount / 5)}
-            page={page}
-            onChange={handlePageChange}
-          />
-        </Box>
+        <PaginationBox
+          totalCount={totalCount}
+          page={page}
+          handlePageChange={handlePageChange}
+        />
       ) : (
         <div style={{ color: "red" }}>No Issues Found with these Filters</div>
       )}
